@@ -13,29 +13,35 @@ GITHUB_TOKEN = None
 SERVICE_NAME = "github_mcp_server" # Define a service name for keyring
 USERNAME = "personal_access_token" # Define a username/key for keyring
 
-try:
-    GITHUB_TOKEN = keyring.get_password(SERVICE_NAME, USERNAME)
-    if GITHUB_TOKEN:
-        logging.info("Successfully retrieved GitHub token from keyring.")
-    else:
-        logging.info("No GitHub token found in keyring, trying environment variable.")
-except Exception as e:
-    logging.warning(f"Could not retrieve token from keyring: {e}. Trying environment variable.") # Log keyring access issues
-
-# Fallback to environment variable if not found in keyring
-if not GITHUB_TOKEN:
-    GITHUB_TOKEN = os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN")
-    if GITHUB_TOKEN:
-        logging.info("Successfully retrieved GitHub token from environment variable.")
-        # Optionally store the token in keyring for future use
-        try:
+# Try environment variable first
+GITHUB_TOKEN = os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN")
+if GITHUB_TOKEN:
+    logging.info("Successfully retrieved GitHub token from environment variable.")
+    # Optionally store the token in keyring for future use if it wasn't already there
+    try:
+        keyring_token = keyring.get_password(SERVICE_NAME, USERNAME)
+        if not keyring_token:
             keyring.set_password(SERVICE_NAME, USERNAME, GITHUB_TOKEN)
-            logging.info("Stored GitHub token from environment variable into keyring.")
-        except Exception as e:
-            logging.warning(f"Could not store token from environment variable into keyring: {e}")
-    else:
-        logging.error("GITHUB_PERSONAL_ACCESS_TOKEN not found in keyring or environment variables.") # Log error
-        raise ValueError("GITHUB_PERSONAL_ACCESS_TOKEN not found in keyring or environment variables.")
+            logging.info("Stored GitHub token from environment variable into keyring for future use.")
+        elif keyring_token != GITHUB_TOKEN:
+             # If the keyring has a different token, perhaps warn or update?
+             # For now, we'll just log that the environment variable is being used.
+             logging.info("Environment variable token used; a different token exists in keyring.")
+    except Exception as e:
+        logging.warning(f"Could not check or store token in keyring: {e}")
+else:
+    logging.info("No GitHub token found in environment variable, trying keyring.")
+    # Fallback to keyring if environment variable is not set
+    try:
+        GITHUB_TOKEN = keyring.get_password(SERVICE_NAME, USERNAME)
+        if GITHUB_TOKEN:
+            logging.info("Successfully retrieved GitHub token from keyring.")
+        else:
+            logging.error("GITHUB_PERSONAL_ACCESS_TOKEN not found in environment variable or keyring.") # Log error
+            raise ValueError("GITHUB_PERSONAL_ACCESS_TOKEN not found in environment variable or keyring.")
+    except Exception as e:
+        logging.warning(f"Could not retrieve token from keyring: {e}. Token not found.") # Log keyring access issues
+        raise ValueError("GITHUB_PERSONAL_ACCESS_TOKEN not found in environment variable or keyring.")
 
 # Create an MCP server
 mcp = FastMCP("Github Dependabot alerts")
