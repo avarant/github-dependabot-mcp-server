@@ -1,17 +1,41 @@
 # main.py
 import os
 import logging  # Add logging import
+import keyring # Import keyring
 from mcp.server.fastmcp import FastMCP
 import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Get GitHub token from environment variable
-GITHUB_TOKEN = os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN")
+# Attempt to get GitHub token from keyring first
+GITHUB_TOKEN = None
+SERVICE_NAME = "github_mcp_server" # Define a service name for keyring
+USERNAME = "personal_access_token" # Define a username/key for keyring
+
+try:
+    GITHUB_TOKEN = keyring.get_password(SERVICE_NAME, USERNAME)
+    if GITHUB_TOKEN:
+        logging.info("Successfully retrieved GitHub token from keyring.")
+    else:
+        logging.info("No GitHub token found in keyring, trying environment variable.")
+except Exception as e:
+    logging.warning(f"Could not retrieve token from keyring: {e}. Trying environment variable.") # Log keyring access issues
+
+# Fallback to environment variable if not found in keyring
 if not GITHUB_TOKEN:
-    logging.error("GITHUB_TOKEN environment variable not set.") # Log error
-    raise ValueError("GITHUB_TOKEN environment variable not set.")
+    GITHUB_TOKEN = os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN")
+    if GITHUB_TOKEN:
+        logging.info("Successfully retrieved GitHub token from environment variable.")
+        # Optionally store the token in keyring for future use
+        try:
+            keyring.set_password(SERVICE_NAME, USERNAME, GITHUB_TOKEN)
+            logging.info("Stored GitHub token from environment variable into keyring.")
+        except Exception as e:
+            logging.warning(f"Could not store token from environment variable into keyring: {e}")
+    else:
+        logging.error("GITHUB_PERSONAL_ACCESS_TOKEN not found in keyring or environment variables.") # Log error
+        raise ValueError("GITHUB_PERSONAL_ACCESS_TOKEN not found in keyring or environment variables.")
 
 # Create an MCP server
 mcp = FastMCP("Github Dependabot alerts")

@@ -32,7 +32,40 @@ Fetches Github Dependabot alerts for a specified repository.
     cd github-dependabot-mcp-server
     ```
 
-3.  **Update your MCP configuration**:
+3.  **Set up Github Authentication**:
+
+    This server requires a Github Personal Access Token with appropriate permissions (e.g., `repo`, `security_events`). There are two ways to provide it:
+
+    *   **Option 1: Using macOS Keychain (Recommended on macOS)**:
+        The script will automatically attempt to read the token from your macOS Keychain using the `keyring` library.
+
+        *   **Via Command Line:**
+            Run the following command in your terminal, replacing `<your token>` with your actual Github token:
+            ```bash
+            # Make sure you are in the project's virtual environment if you have one active
+            # Or install keyring globally if needed: pip install keyring
+            keyring set github_mcp_server personal_access_token
+            # It will prompt you to enter the token securely.
+            ```
+            Alternatively, using the Python module:
+            ```bash
+            python -m keyring set github_mcp_server personal_access_token
+            ```
+
+        *   **Via Keychain Access UI:**
+            1.  Open "Keychain Access" (Applications -> Utilities).
+            2.  Select the `login` keychain and the `Passwords` category.
+            3.  Click the `+` button to add a new item.
+            4.  Enter the following details:
+                *   **Keychain Item Name:** `personal_access_token`
+                *   **Account Name:** `github_mcp_server`
+                *   **Password:** Paste your Github token.
+            5.  Click "Add".
+
+    *   **Option 2: Using Environment Variable:**
+        If the token is not found in the Keychain, the script will fall back to using the `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable. If you use this method, the script will attempt to store the token in your Keychain for future use (if `keyring` is functional).
+
+4.  **Update your MCP configuration**:
 
     Edit your global `~/.cursor/mcp.json` or create a local `.cursor/mcp.json` file within your project:
 
@@ -50,7 +83,8 @@ Fetches Github Dependabot alerts for a specified repository.
             "mcp/github"
           ],
           "env": {
-            "GITHUB_PERSONAL_ACCESS_TOKEN": "<your github token>"
+            // Optional: Set if NOT using Keychain, or as a fallback.
+            // "GITHUB_PERSONAL_ACCESS_TOKEN": "<your github token>"
           }
         },
         "github-dependabot": {
@@ -64,13 +98,14 @@ Fetches Github Dependabot alerts for a specified repository.
             "main.py"
           ],
           "env": {
-            "GITHUB_PERSONAL_ACCESS_TOKEN": "<your github token>"
+            // Optional: Set if NOT using Keychain, or as a fallback.
+            // "GITHUB_PERSONAL_ACCESS_TOKEN": "<your github token>"
           }
         }
       }
     }
     ```
-    **Note:** Replace `<absolute path to github-dependabot-mcp-server directory>` and `<your github token>` with your actual values. Using an absolute path ensures Cursor can find the server regardless of the workspace root.
+    **Note:** Replace `<absolute path to github-dependabot-mcp-server directory>` with your actual path.
 
 ## Tools Provided
 
