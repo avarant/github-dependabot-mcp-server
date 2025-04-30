@@ -34,7 +34,17 @@ Fetches Github Dependabot alerts for a specified repository.
 
 3.  **Set up Github Authentication**:
 
-    This server requires a Github Personal Access Token with appropriate permissions (e.g., `repo`, `security_events`). There are two ways to provide it:
+    First, you need to generate a Github Personal Access Token (PAT) if you don't already have one:
+    1.  Go to your Github Settings -> Developer settings -> Personal access tokens -> Tokens (classic).
+    2.  Click "Generate new token" (or "Generate new token (classic)").
+    3.  Give your token a descriptive name (e.g., "MCP Dependabot Server").
+    4.  Set an expiration date.
+    5.  Select the necessary scopes:
+        *   `repo` (Full control of private repositories) - needed for accessing repository data.
+        *   `security_events` (Read security events) - needed for reading Dependabot alerts.
+    6.  Click "Generate token" and copy the generated token immediately. You won't be able to see it again.
+
+    Once you have your token, this server requires it to authenticate with the Github API. There are two ways to provide it:
 
     *   **Option 1: Using macOS Keychain (Recommended on macOS)**:
         The script will automatically attempt to read the token from your macOS Keychain using the `keyring` library.
